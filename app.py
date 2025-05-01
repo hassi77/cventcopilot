@@ -1,97 +1,126 @@
 import streamlit as st
-from openai import OpenAI
-import datetime
-import csv
-import os
+import openai
 
-# Set your OpenAI API key
-import streamlit as st
-OPENAI_API_KEY = st.secrets["openai_api_key"]  # ✅ Secure
-client = OpenAI(api_key=OPENAI_API_KEY)
+# Page config and header
+st.set_page_config(page_title="Hassanin's Sourcing Copilot", layout="centered")
+st.markdown("## 📬 Hassanin's Sourcing Copilot")
+st.markdown("#### 🎯 Transform website blurbs into cold emails that convert — trained on booked demos and sourcing wins.")
+st.markdown("---")
 
+# OpenAI key
+openai.api_key = st.secrets.get("OPENAI_API_KEY", "sk-...")
 
-# Streamlit setup
-st.set_page_config(page_title="Cvent Email Copilot", layout="wide")
-st.title("📧 Cvent Email Copilot")
-st.caption("Generate CSN-branded outbound emails based on role and event type")
-st.markdown("""
-<style>
-    .stButton>button { background-color: #00338d; color: white; border-radius: 8px; font-weight: 600; }
-    .stTextArea textarea, .stTextInput input { border-radius: 8px; }
-    .reportview-container .main .block-container{ padding-top: 2rem; }
-</style>
-""", unsafe_allow_html=True)
+# Input Section
+st.markdown("### 🔍 Prospect Research")
+site_text = st.text_area("Paste Website, LinkedIn, or ZoomInfo Info 👇", height=250)
 
-# Layout: Full width form
-st.subheader("🔍 Paste Research")
+st.markdown("### 👤 Prospect Details")
+role = st.selectbox("Prospect Role", ["Managing Director", "Event Manager", "Project Manager", "Partner"])
+agency_type = st.selectbox("Agency Type", ["DMC", "Venue Finder", "Event Agency", "PCO", "Travel Agency", "Mixed"])
+event_types = st.multiselect("Event Types", ["Pharma", "Incentive", "Internal", "Corporate", "Brand Activation"])
+events_per_year = st.slider("Estimated Events Per Year", 5, 100, 20)
+pain_point = st.text_input("Biggest Sourcing Pain Point")
+collab = st.text_input("Collaboration Style (e.g., internal team + venue finder)")
 
-linkedin_disabled = st.checkbox("❌ No LinkedIn Info")
-linkedin_info = st.text_area("LinkedIn Bio (optional)", height=100, disabled=linkedin_disabled)
+st.markdown("### ✉️ Email Type")
+email_type = st.radio("What kind of email do you want?", ["First-Hit", "Third-Hit"])
+submit = st.button("🚀 Generate Cold Email")
 
-zoominfo_disabled = st.checkbox("❌ No ZoomInfo Info")
-zoominfo_info = st.text_area("ZoomInfo / Copilot Info (optional)", height=100, disabled=zoominfo_disabled)
+# Logic
+if submit and site_text:
+    with st.spinner("Crafting your personalized cold email..."):
 
-website_disabled = st.checkbox("❌ No Website Info")
-website_info = st.text_area("Website Description (optional)", height=100, disabled=website_disabled)
+        system_prompt = """
+You are a highly trained AI sales assistant supporting Hassanin at Cvent. You generate cold outbound emails to third-party event agencies (TPPs) across Europe using proven formats from booked demos.
 
-role = st.selectbox("🧑 Prospect Role", ["Managing Director", "Event Manager", "Project Manager", "Partner"])
-agency_type = st.selectbox("🏢 Agency Type", ["DMC", "Venue Finder", "Event Agency", "PCO", "Travel Agency", "Mixed"])
-event_types = st.multiselect("🎯 Event Types", [
-    "Pharma", "Incentive", "Internal", "Corporate", "Brand Activation",
-    "Hybrid", "Congress", "Teambuilding", "Luxury", "Sports", "Wellness"
-])
+🔒 You must always refer to the product as the Cvent Supplier Network (never CSN).
 
-events_skipped = st.checkbox("❌ No Event Count Info")
-events_per_year = st.slider("📆 Events Per Year", 5, 100, 20, disabled=events_skipped)
+🎯 Your job:
+- Write first-touch emails introducing the value of the Cvent Supplier Network
+- Write third-touch follow-ups that re-engage prospects with fresh angles or urgency
 
-pain_point = st.text_input("💢 Biggest Pain Point")
-email_type = st.radio("✉️ Email Type", ["First-Hit", "Third-Hit"])
-tone = st.select_slider("🎤 Tone Preference", options=["Professional", "Balanced", "Conversational"])
+📌 Target personas:
+- Managing Directors: Focus on team visibility, time saved, control, scalability
+- Event Managers / Project Managers: Focus on pain relief (manual sourcing), exports, speed
+- Partners / Owners: Focus on client results, trust, saving time for the team
 
-submit = st.button("✨ Generate Email")
-alternate = st.button("🔁 Try Different CTA")
+✅ Cvent Supplier Network (Core Value Props):
+- Access to 300,000+ venues worldwide
+- Send one RFP to multiple venues and receive proposals in one dashboard
+- Compare venue responses side-by-side
+- Export client-ready, brandable proposals (PDF, Excel)
+- Reuse past venue sourcing history to go faster
+- Share and track venue activity with colleagues
 
-if submit or alternate:
-    system_prompt = """You are a highly trained AI sales assistant for Cvent, supporting outbound emails for the Cvent Supplier Network (CSN). Write cold outbound emails (under 125 words) to European third-party event agencies.\n\nRules:\n- Use ✅ to highlight 2–3 CSN value props\n- Skip small talk\n- End with a soft CTA like \"Worth a look?\" or \"Can I send over an example?\"\n- Match tone based on user's selection\n- If the prospect is a Managing Director or Partner, split the email into two parts:\n    1. Here's how you benefit: (3 bullets)\n    2. Here's how your team benefits: (3 bullets)\n- If it's a Project or Event Manager, focus on solving sourcing pain, streamlining proposals, and winning client trust\n\nRespond with only the email body.\n"""
+🧱 Objection Handling:
+"We already use Excel or our own list" → Cvent adds scale, transparency, and export tools  
+"We don’t source often" → Even 10 events/year = 100+ hours saved  
+"We work with a venue finder" → Cvent complements that with better visibility and client-ready exports
 
-    combined_input = f"""
-LinkedIn Info:
-{linkedin_info}
+🧠 Format Rules:
+- Max 125 words
+- 2–3 value props with ✅
+- Use the company’s language, mention what they do
+- End with soft CTA (e.g., "Worth a look?", "Want me to send a quick example?")
+- Skip all small talk (no "Hope you're well")
+- Never use numbered or bulleted lists unless quoting directly
 
-ZoomInfo Info:
-{zoominfo_info}
+🚫 Red Flags Checklist:
+- No asterisks (use plain formatting)
+- No generic phrases ("navigating luxury experiences")
+- No more than 2 ✅ per line
+- Don’t repeat value props already stated
+- Don’t exceed 125 words
 
-Website Info:
-{website_info}
+📧 First-Touch Examples (3 of 10):
+Hi – I saw your agency supports pharma groups across Portugal. This might help:  
+✅ Access to 300k+ venues, search by region/type  
+✅ One RFP, all responses in one dashboard  
+✅ Export for client decks  
+Worth a look?
+
+Hi – I came across your work on brand activations. This might be timely:  
+✅ Source fresh venues for repeat clients  
+✅ Compare proposals instantly  
+✅ Share shortlist with your team  
+Want a quick example?
+
+📩 Follow-up Examples (3 of 10):
+- Thought I’d try you once more. Other agencies in [country] are saving hours with the Cvent Supplier Network. Want me to show how?
+- Just circling back—this could help your team speed up venue research while staying in control of client deliverables.
+- Understand you may be busy—happy to revisit next quarter unless a sourcing need is coming up soon?
+
+📈 Real Proof:
+Hassanin has booked demos with Meeting Contact, Travel Tilago, Lotus DMC, and Meeting Point using this exact format. Meeting Contact booked from the very first email.
+
+Your goal is to recreate these results.
+"""
+
+        user_prompt = f"""
+Website or LinkedIn info:
+{site_text}
 
 Role: {role}
 Agency Type: {agency_type}
-Event Types: {', '.join(event_types)}
-Events per year: {'' if events_skipped else events_per_year}
-Pain Point: {pain_point}
+Country: Unknown
+Events per year: {events_per_year}
+Event types: {', '.join(event_types)}
+Biggest pain point: {pain_point}
+Collaboration: {collab}
 Email Type: {email_type}
-Tone: {tone}
-CTA Style: {'alternate' if alternate else 'standard'}
 """
 
-    with st.spinner("Generating email..."):
-        try:
-            response = client.chat.completions.create(
-                model="gpt-4-turbo",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": combined_input}
-                ],
-                temperature=0.8,
-                max_tokens=400
-            )
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=800
+        )
 
-            final_email = response.choices[0].message.content
+        st.markdown("### ✉️ Your Cold Email")
+        st.success(response.choices[0].message.content)
 
-            st.markdown("### ✉️ Generated Email")
-            st.text_area("Copy or edit this email:", final_email, height=200)
-            st.download_button("📋 Copy to Clipboard", final_email, file_name="email.txt")
-
-        except Exception as e:
-            st.error(f"⚠️ Something went wrong: {e}")
 
