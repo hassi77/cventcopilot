@@ -47,7 +47,8 @@ Email Type: {email_type}
 """
 
     with st.spinner("Creating your outreach..."):
-        response = openai.ChatCompletion.create(
+        client=openai.OpenAI()
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": system_prompt},
