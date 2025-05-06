@@ -3,9 +3,8 @@ from openai import OpenAI
 
 # --- Page setup ---
 st.set_page_config(page_title="📬 Hassanin's Sourcing Copilot", layout="centered")
-st.image("cvent_logo.jpg", width=180)
 st.title("📬 Hassanin's Sourcing Copilot")
-st.caption("Ultra-personalized emails for third-party planners — powered by the Cvent Supplier Network.")
+st.caption("Ultra-personalized emails for third-party planners ")
 
 # --- OpenAI client ---
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
